@@ -1,26 +1,23 @@
 import argparse
-
 import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report
-import matplotlib.pyplot as plt
-
-train_csv = pd.read_csv('../data/train.csv')
-val_csv = pd.read_csv('../data/val.csv')
-test_csv = pd.read_csv('../data/test.csv')
 
 
 def load_data(train_csv, val_csv, test_csv):
-    X_train = train_csv.drop(['order0', 'order1', 'order2'], axis=1)
-    y_train = train_csv['order0']
+    train_df = pd.read_csv(train_csv)
+    val_df = pd.read_csv(val_csv)
+    test_df = pd.read_csv(test_csv)
 
-    X_val = val_csv.drop(['order0', 'order1', 'order2'], axis=1)
-    y_val = val_csv['order0']
+    X_train = train_df.drop(['order0', 'order1', 'order2'], axis=1)
+    y_train = train_df['order0']
 
-    X_test = test_csv
+    X_val = val_df.drop(['order0', 'order1', 'order2'], axis=1)
+    y_val = val_df['order0']
+
+    X_test = test_df
 
     ss = StandardScaler()
     X_train = ss.fit_transform(X_train)
@@ -55,10 +52,10 @@ class MLP(nn.Module):
         return x
 
 
-def init_model():
+def init_model(lr):
     model = MLP()
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     return model, criterion, optimizer
 
@@ -71,7 +68,6 @@ def evaluate(model, X, y, criterion):
         predictions = outputs.argmax(dim=1)
         accuracy = accuracy_score(y, predictions)
         conf_matrix = confusion_matrix(y, predictions)
-        # print(classification_report(y, predictions))
 
     return predictions, accuracy, loss, conf_matrix
 
@@ -115,13 +111,20 @@ def train(model, criterion, optimizer, X_train, y_train, X_val, y_val, epochs, b
 
 
 def main(args):
-    epochs = 70
-    X_train, y_train, X_val, y_val, X_test = load_data(train_csv, val_csv, test_csv)
-    model, criterion, optimizer = init_model()
-    model, train_losses, val_losses = train(model, criterion, optimizer, X_train, y_train, X_val, y_val, epochs, 512)
+    X_train, y_train, X_val, y_val, X_test = load_data(args.train_csv, args.val_csv, args.test_csv)
+    model, criterion, optimizer = init_model(args.lr)
+    model, train_losses, val_losses = train(model,
+                                            criterion,
+                                            optimizer,
+                                            X_train,
+                                            y_train,
+                                            X_val,
+                                            y_val,
+                                            args.num_epoches,
+                                            args.batch_size)
     predictions = predict(model, X_test)
 
-    pd.DataFrame(predictions).to_csv('submission.csv')
+    pd.DataFrame(predictions).to_csv(args.out_csv)
 
     # plt.plot(val_losses)
     # plt.plot(train_losses)
@@ -133,12 +136,12 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--train_csv', default='homeworks/hw1/data/train.csv')
-    parser.add_argument('--val_csv', default='homeworks/hw1/data/val.csv')
-    parser.add_argument('--test_csv', default='homeworks/hw1/data/test.csv')
-    parser.add_argument('--out_csv', default='homeworks/hw1/data/submission.csv')
-    parser.add_argument('--lr', default=0)
-    parser.add_argument('--batch_size', default=0)
+    parser.add_argument('--train_csv', default='../data/train.csv')
+    parser.add_argument('--val_csv', default='../data/val.csv')
+    parser.add_argument('--test_csv', default='../data/test.csv')
+    parser.add_argument('--out_csv', default='submission.csv')
+    parser.add_argument('--lr', default=3e-4)
+    parser.add_argument('--batch_size', default=512)
     parser.add_argument('--num_epoches', default=5)
 
     args = parser.parse_args()
