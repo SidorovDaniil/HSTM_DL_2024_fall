@@ -9,4 +9,4 @@
 *.ptl filter=lfs diff=lfs merge=lfs -text
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.ckpt filter=lfs diff=lfs merge=lfs -text
-
+homeworks/hw4/model_to_submit/model.safetensors filter=lfs diff=lfs merge=lfs -text

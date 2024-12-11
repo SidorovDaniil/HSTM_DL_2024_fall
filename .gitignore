@@ -7,5 +7,6 @@ __pycache__/
 .idea/
 **/*.ipynb_checkpoints/
 /data
-/model_to_submit
-/hw2
+homeworks/hw4/model_to_submit
+homeworks/hw2
+practices/key.txt
